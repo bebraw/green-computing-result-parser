@@ -30,27 +30,37 @@ async function readRuns(path: string) {
     files.map(async (p) => ({
       path: p,
       index: await parseIndex(p),
-      pages: await parsePages(p),
+      // pages: await parsePages(p),
     }))
   );
 }
 
 async function parseIndex(path: string) {
-  const page = await Deno.readTextFile(_path.join(path, "index.html"));
+  const files1 = await readFiles(_path.join(path, "pages"));
+
+  if (!files1.length) {
+    return;
+  }
+
+  const files2 = await readFiles(files1[0]);
+
+  if (!files2.length) {
+    return;
+  }
+
+  const page = await Deno.readTextFile(_path.join(files2[0], "index.html"));
   const $ = cheerio.load(page);
 
   const powerConsumption = $('td:contains("Firefox CPU Power Consumption")')
-    // .next()
+    .next()
     .text();
+  const [powerAmount, powerUnit] = powerConsumption.split(" ");
 
-  // console.log({ powerConsumption });
-
-  // TODO: Find index.html - /pages/<>--<>/index.html
   // TODO: Parse index.html now - Page Metrics - "Firefox CPU Power Consumption"
   // TODO: Parse index.html now - Timing Metrics - ("TTFB [median]", "First Paint [median]")
   // TODO: Parse index.html now - Google Web Vitals - ("Fully Loaded [median]", "TTFB [median]", "First Contentful Paint [median]", "Largest Contentful Paint [median]")
 
-  return { powerConsumption };
+  return { powerConsumption: { amount: powerAmount, unit: powerUnit } };
 }
 
 async function parsePages(path: string) {
