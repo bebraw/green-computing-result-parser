@@ -30,7 +30,7 @@ async function readRuns(path: string) {
     files.map(async (p) => ({
       path: p,
       index: await parseIndex(p),
-      // pages: await parsePages(p),
+      pages: await parsePages(p),
     }))
   );
 }
@@ -97,10 +97,24 @@ async function parsePages(path: string) {
   const page = await Deno.readTextFile(_path.join(path, "pages.html"));
   const $ = cheerio.load(page);
 
-  // TODO: Parse pages.html now
-  // TODO: Check table + associated values per columns and rows
+  const fields = [
+    "URL",
+    "Total Transfer Size",
+    "Total Requests",
+    "CPU benchmark score",
+    "Third Party Requests",
+    "JavaScript Transfer Size",
+    "CSS Transfer Size",
+    "Image Transfer Size",
+    "Coach Performance Score",
+  ];
 
-  return {};
+  return Object.fromEntries(
+    fields.map((field) => [
+      field,
+      $(`td[data-title="${field}"]`).first().text(),
+    ])
+  );
 }
 
 async function readFiles(path: string) {
