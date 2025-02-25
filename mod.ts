@@ -51,16 +51,46 @@ async function parseIndex(path: string) {
   const page = await Deno.readTextFile(_path.join(files2[0], "index.html"));
   const $ = cheerio.load(page);
 
+  // const pageMetrics = $('th:contains("Page metrics")');
   const powerConsumption = $('td:contains("Firefox CPU Power Consumption")')
     .next()
     .text();
-  const [powerAmount, powerUnit] = powerConsumption.split(" ");
 
-  // TODO: Parse index.html now - Page Metrics - "Firefox CPU Power Consumption"
-  // TODO: Parse index.html now - Timing Metrics - ("TTFB [median]", "First Paint [median]")
-  // TODO: Parse index.html now - Google Web Vitals - ("Fully Loaded [median]", "TTFB [median]", "First Contentful Paint [median]", "Largest Contentful Paint [median]")
+  // const timingMetrics = $('th:contains("Timing metrics")');
+  const timingTtfb = $('td:contains("TTFB [median]")').first().next().text();
+  const firstPaintTtfb = $('td:contains("First Paint [median]")')
+    .first()
+    .next()
+    .text()
+    .trim();
 
-  return { powerConsumption: { amount: powerAmount, unit: powerUnit } };
+  // const googleWebVitals = $('th:contains("Google Web Vitals")');
+  const gwvFullyLoaded = $('td:contains("Fully Loaded [median]")')
+    .next()
+    .text();
+  // Isn't this the same as "Timing metrics" TTFB?
+  const gwvTtfb = $('td:contains("TTFB [median]")').last().next().text();
+  const gwvFcp = $('td:contains("First Contentful Paint (FCP) [median]")')
+    .next()
+    .text()
+    .trim();
+  const gwvLcp = $('td:contains("Largest Contentful Paint (LCP) [median]")')
+    .next()
+    .text();
+
+  return {
+    powerConsumption: powerConsumption.split(" "),
+    timing: {
+      ttfb: timingTtfb.split(" "),
+      firstPaint: firstPaintTtfb.split(" "),
+    },
+    googleWebVitals: {
+      gwvFullyLoaded: gwvFullyLoaded.split(" "),
+      ttfb: gwvTtfb.split(" "),
+      fcp: gwvFcp.split(" "),
+      lcp: gwvLcp.split(" "),
+    },
+  };
 }
 
 async function parsePages(path: string) {
