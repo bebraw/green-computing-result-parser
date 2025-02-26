@@ -96,16 +96,16 @@ async function parseIndex(path: string) {
 
   return {
     type,
-    powerConsumption: powerConsumption.split(" "),
+    powerConsumption: powerConsumption.split(" ")[0],
     timing: {
-      ttfb: timingTtfb.split(" "),
-      firstPaint: firstPaintTtfb.split(" "),
+      ttfb: timingTtfb.split(" ")[0],
+      firstPaint: firstPaintTtfb.split(" ")[0],
     },
     googleWebVitals: {
-      gwvFullyLoaded: gwvFullyLoaded.split(" "),
-      ttfb: gwvTtfb.split(" "),
-      fcp: gwvFcp.split(" "),
-      lcp: gwvLcp.split(" "),
+      gwvFullyLoaded: gwvFullyLoaded.split(" ")[0],
+      ttfb: gwvTtfb.split(" ")[0],
+      fcp: gwvFcp.split(" ")[0],
+      lcp: gwvLcp.split(" ")[0],
     },
   };
 }
