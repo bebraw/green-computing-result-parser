@@ -48,7 +48,19 @@ async function parseIndex(path: string) {
     return;
   }
 
-  const page = await Deno.readTextFile(_path.join(files2[0], "index.html"));
+  const f = files2[0];
+  const [_, suffix] = f.split("--");
+  const type = [
+    suffix[0] === "c" ? "non-cached" : suffix[0] === "C" ? "cached" : "",
+    suffix[1] === "s" ? "not-scrolled" : suffix[1] === "S" ? "scrolled" : "",
+    suffix[2] === "r"
+      ? "cookies-rejected"
+      : suffix[2] === "A"
+      ? "cookies-accepted"
+      : "",
+  ];
+
+  const page = await Deno.readTextFile(_path.join(f, "index.html"));
   const $ = cheerio.load(page);
 
   // const pageMetrics = $('th:contains("Page metrics")');
@@ -79,6 +91,7 @@ async function parseIndex(path: string) {
     .text();
 
   return {
+    type,
     powerConsumption: powerConsumption.split(" "),
     timing: {
       ttfb: timingTtfb.split(" "),
