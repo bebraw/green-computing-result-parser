@@ -2,9 +2,19 @@ import * as _path from "jsr:@std/path";
 import * as cheerio from "https://esm.sh/cheerio@1.0.0";
 
 async function parse(path: string) {
-  const tests = await readTests(path);
+  const results = await readTests(path);
 
-  console.log("parse now", JSON.stringify(tests[0], null, 2));
+  const allRuns: unknown[] = [];
+
+  results.forEach((result) => {
+    result.rounds.forEach((round) => {
+      round.runs.forEach((run) => {
+        allRuns.push({ site: result.site, ...run });
+      });
+    });
+  });
+
+  console.log(allRuns);
 }
 
 async function readTests(path: string) {
