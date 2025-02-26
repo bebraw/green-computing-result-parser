@@ -110,10 +110,15 @@ async function parseIndex(path: string) {
   }
 
   const f = files2[0];
-  const [_, suffix] = f.split("--");
+  let [_, suffix] = f.split("--");
 
   if (!suffix) {
     return;
+  }
+
+  // For some names there's actually --- instead of --
+  if (suffix[0] === "-") {
+    suffix = suffix.slice(1);
   }
 
   const type = [
