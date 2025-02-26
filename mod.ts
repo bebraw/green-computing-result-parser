@@ -4,7 +4,7 @@ import * as cheerio from "https://esm.sh/cheerio@1.0.0";
 async function parse(path: string) {
   const results = await readTests(path);
 
-  const allRuns: unknown[] = [];
+  const allRuns: Record<string, unknown>[] = [];
 
   results.forEach((result) => {
     result.rounds.forEach((round) => {
@@ -14,7 +14,54 @@ async function parse(path: string) {
     });
   });
 
-  console.log(allRuns);
+  const fields = [
+    "site",
+    "index.type.caching",
+    "index.type.scrolling",
+    "index.type.cookies",
+    "index.powerConsumption",
+    "index.timing.ttfb",
+    "index.timing.firstPaint",
+    "index.googleWebVitals.gwvFullyLoaded",
+    "index.googleWebVitals.ttfb",
+    "index.googleWebVitals.fcp",
+    "index.googleWebVitals.lcp",
+    "pages.TotalTransferSize",
+    "pages.TotalRequests",
+    "pages.CPUbenchmarkscore",
+    "pages.ThirdPartyRequests",
+    "pages.JavaScriptTransferSize",
+    "pages.CSSTransferSize",
+    "pages.ImageTransferSize",
+    "pages.CoachPerformanceScore",
+  ];
+
+  const csv =
+    fields.join(",") +
+    "\n" +
+    allRuns.map((r) => fields.map((f) => get(r, f)).join(",") + "\n").join("");
+
+  console.log(csv);
+}
+
+function get(o: Record<string, unknown>, k: string) {
+  const parts = k.split(".");
+
+  if (!o) {
+    return;
+  }
+
+  const v = o[parts[0]];
+
+  if (parts.length > 1) {
+    return get(
+      // @ts-expect-error This is fine for now
+      v,
+      parts.slice(1).join(".")
+    );
+  }
+
+  return v;
 }
 
 async function readTests(path: string) {
@@ -64,6 +111,11 @@ async function parseIndex(path: string) {
 
   const f = files2[0];
   const [_, suffix] = f.split("--");
+
+  if (!suffix) {
+    return;
+  }
+
   const type = [
     suffix[0] === "c" ? "non-cached" : suffix[0] === "C" ? "cached" : "",
     suffix[1] === "s" ? "not-scrolled" : suffix[1] === "S" ? "scrolled" : "",
@@ -74,74 +126,104 @@ async function parseIndex(path: string) {
       : "",
   ];
 
-  const page = await Deno.readTextFile(_path.join(f, "index.html"));
-  const $ = cheerio.load(page);
+  try {
+    const page = await Deno.readTextFile(_path.join(f, "index.html"));
+    const $ = cheerio.load(page);
 
-  // const pageMetrics = $('th:contains("Page metrics")');
-  const powerConsumption = $('td:contains("Firefox CPU Power Consumption")')
-    .next()
-    .text();
+    // const pageMetrics = $('th:contains("Page metrics")');
+    const powerConsumption = $('td:contains("Firefox CPU Power Consumption")')
+      .next()
+      .text();
 
-  // const timingMetrics = $('th:contains("Timing metrics")');
-  const timingTtfb = $('td:contains("TTFB [median]")').first().next().text();
-  const firstPaintTtfb = $('td:contains("First Paint [median]")')
-    .first()
-    .next()
-    .text()
-    .trim();
+    // const timingMetrics = $('th:contains("Timing metrics")');
+    const timingTtfb = $('td:contains("TTFB [median]")').first().next().text();
+    const firstPaintTtfb = $('td:contains("First Paint [median]")')
+      .first()
+      .next()
+      .text()
+      .trim();
 
-  // const googleWebVitals = $('th:contains("Google Web Vitals")');
-  const gwvFullyLoaded = $('td:contains("Fully Loaded [median]")')
-    .next()
-    .text();
-  // Isn't this the same as "Timing metrics" TTFB?
-  const gwvTtfb = $('td:contains("TTFB [median]")').last().next().text();
-  const gwvFcp = $('td:contains("First Contentful Paint (FCP) [median]")')
-    .next()
-    .text()
-    .trim();
-  const gwvLcp = $('td:contains("Largest Contentful Paint (LCP) [median]")')
-    .next()
-    .text();
+    // const googleWebVitals = $('th:contains("Google Web Vitals")');
+    const gwvFullyLoaded = $('td:contains("Fully Loaded [median]")')
+      .next()
+      .text();
+    // Isn't this the same as "Timing metrics" TTFB?
+    const gwvTtfb = $('td:contains("TTFB [median]")').last().next().text();
+    const gwvFcp = $('td:contains("First Contentful Paint (FCP) [median]")')
+      .next()
+      .text()
+      .trim();
+    const gwvLcp = $('td:contains("Largest Contentful Paint (LCP) [median]")')
+      .next()
+      .text();
 
-  return {
-    type,
-    powerConsumption: powerConsumption.split(" ")[0],
-    timing: {
-      ttfb: timingTtfb.split(" ")[0],
-      firstPaint: firstPaintTtfb.split(" ")[0],
-    },
-    googleWebVitals: {
-      gwvFullyLoaded: gwvFullyLoaded.split(" ")[0],
-      ttfb: gwvTtfb.split(" ")[0],
-      fcp: gwvFcp.split(" ")[0],
-      lcp: gwvLcp.split(" ")[0],
-    },
-  };
+    return {
+      type: {
+        caching: type[0],
+        scrolling: type[1],
+        cookies: type[2],
+      },
+      powerConsumption: powerConsumption.split(" ")[0],
+      timing: {
+        ttfb: timingTtfb.split(" ")[0],
+        firstPaint: firstPaintTtfb.split(" ")[0],
+      },
+      googleWebVitals: {
+        gwvFullyLoaded: gwvFullyLoaded.split(" ")[0],
+        ttfb: gwvTtfb.split(" ")[0],
+        fcp: gwvFcp.split(" ")[0],
+        lcp: gwvLcp.split(" ")[0],
+      },
+    };
+  } catch (error: unknown) {
+    if (
+      error.message.startsWith("Not a directory") ||
+      error.message.startsWith("No such file")
+      // error instanceof Deno.errors.NotADirectory ||
+      // error instanceof Deno.errors.NotFound
+    ) {
+      // no-op
+    } else {
+      throw error;
+    }
+  }
 }
 
 async function parsePages(path: string) {
-  const page = await Deno.readTextFile(_path.join(path, "pages.html"));
-  const $ = cheerio.load(page);
+  try {
+    const page = await Deno.readTextFile(_path.join(path, "pages.html"));
+    const $ = cheerio.load(page);
 
-  const fields = [
-    "URL",
-    "Total Transfer Size",
-    "Total Requests",
-    "CPU benchmark score",
-    "Third Party Requests",
-    "JavaScript Transfer Size",
-    "CSS Transfer Size",
-    "Image Transfer Size",
-    "Coach Performance Score",
-  ];
+    const fields = [
+      // "URL",
+      "Total Transfer Size",
+      "Total Requests",
+      "CPU benchmark score",
+      "Third Party Requests",
+      "JavaScript Transfer Size",
+      "CSS Transfer Size",
+      "Image Transfer Size",
+      "Coach Performance Score",
+    ];
 
-  return Object.fromEntries(
-    fields.map((field) => [
-      field,
-      $(`td[data-title="${field}"]`).first().text(),
-    ])
-  );
+    return Object.fromEntries(
+      fields.map((field) => [
+        field.replace(/ /g, ""),
+        $(`td[data-title="${field}"]`).first().text(),
+      ])
+    );
+  } catch (error: unknown) {
+    if (
+      error.message.startsWith("Not a directory") ||
+      error.message.startsWith("No such file")
+      // error instanceof Deno.errors.NotADirectory ||
+      // error instanceof Deno.errors.NotFound
+    ) {
+      // no-op
+    } else {
+      throw error;
+    }
+  }
 }
 
 async function readFiles(path: string) {
@@ -153,10 +235,17 @@ async function readFiles(path: string) {
 
       ret.push(p);
     }
-  } catch (_error) {
-    // TODO: Catch only cases where path is not a directory!
-    // Nothing to do
-    console.error(_error);
+  } catch (error: unknown) {
+    if (
+      error.message.startsWith("Not a directory") ||
+      error.message.startsWith("No such file")
+      // error instanceof Deno.errors.NotADirectory ||
+      // error instanceof Deno.errors.NotFound
+    ) {
+      // no-op
+    } else {
+      throw error;
+    }
   }
 
   return ret;
