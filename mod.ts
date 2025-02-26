@@ -15,6 +15,7 @@ async function parse(path: string) {
   });
 
   const fields = [
+    "path",
     "site",
     "index.type.caching",
     "index.type.scrolling",
