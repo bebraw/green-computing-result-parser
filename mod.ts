@@ -11,7 +11,11 @@ async function readTests(path: string) {
   const files = await readFiles(path);
 
   return Promise.all(
-    files.map(async (p) => ({ path: p, rounds: await readRounds(p) }))
+    files.map(async (p) => ({
+      site: p.split("/").at(-1),
+      path: p,
+      rounds: await readRounds(p),
+    }))
   );
 }
 
