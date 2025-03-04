@@ -67,7 +67,20 @@ function get(o: Record<string, unknown>, k: string) {
 
 async function readTests(path: string) {
   const files = await readFiles(path);
+  const ret = [];
 
+  for await (const p of files) {
+    ret.push({
+      site: p.split("/").at(-1),
+      path: p,
+      rounds: await readRounds(p),
+    });
+  }
+
+  return ret;
+
+  // Parallel version - this is heavy with many inputs!
+  /*
   return Promise.all(
     files.map(async (p) => ({
       site: p.split("/").at(-1),
@@ -75,6 +88,7 @@ async function readTests(path: string) {
       rounds: await readRounds(p),
     }))
   );
+  */
 }
 
 async function readRounds(path: string) {
