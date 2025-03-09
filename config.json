@@ -1,0 +1,32 @@
+{
+	"browsertime": {
+		"iterations": 1,
+		"browser": "firefox",
+		"viewPort": "1920x1080",
+		"screenshot": false,
+		"video": false,
+		"visualMetrics": false,
+		"visualMetricsContentful": false
+	},
+	"firefox": {
+		"geckoProfiler": true,
+		"geckoProfilerParams": {
+			"features": "power",
+			"thread": "GeckoMain, Renderer, Compositor, *"
+		},
+		"powerConsumption": true
+	},
+	"html": {
+		"pageSummaryMetrics": [
+			"transferSize.total",
+			"requests.total",
+			"browser.cpuBenchmark",
+			"thirdParty.requests",
+			"transferSize.javascript",
+			"transferSize.css",
+			"transferSize.image",
+			"score.performance"
+		]
+	},
+	"silent": true
+}

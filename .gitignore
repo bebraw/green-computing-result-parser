@@ -1,1 +1,7 @@
 results.csv
+results/*
+scripts/*
+results.tar.bz
+results.tar.gz
+results.zip
+failed.txt
