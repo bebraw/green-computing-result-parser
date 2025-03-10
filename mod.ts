@@ -17,6 +17,8 @@ async function parse(path: string) {
   const fields = [
     "path",
     "site",
+    "index.country",
+    "index.category",
     "index.type.caching",
     "index.type.scrolling",
     "index.type.cookies",
@@ -131,20 +133,23 @@ async function parseIndex(path: string) {
     return;
   }
 
+  // File format to parse: <url>--<country>-<category>-<S|n><A|r><F|c>-
+
   // For some names there's actually --- instead of --
   if (suffix[0] === "-") {
     suffix = suffix.slice(1);
   }
 
-  const type = [
-    suffix[0] === "c" ? "non-cached" : suffix[0] === "C" ? "cached" : "",
-    suffix[1] === "s" ? "not-scrolled" : suffix[1] === "S" ? "scrolled" : "",
-    suffix[2] === "r"
-      ? "cookies-rejected"
-      : suffix[2] === "A"
-      ? "cookies-accepted"
-      : "",
-  ];
+  const [country, category, meta] = suffix.split("-");
+
+  const metaMap: Record<string, string> = {
+    n: "not-scrolled",
+    S: "scrolled",
+    r: "cookies-rejected",
+    A: "cookies-accepted",
+    c: "non-cached",
+    F: "cached",
+  };
 
   try {
     const page = await Deno.readTextFile(_path.join(f, "index.html"));
@@ -178,10 +183,12 @@ async function parseIndex(path: string) {
       .text();
 
     return {
+      country,
+      category,
       type: {
-        caching: type[0],
-        scrolling: type[1],
-        cookies: type[2],
+        scrolling: metaMap[meta[0]],
+        cookies: metaMap[meta[1]],
+        caching: metaMap[meta[2]],
       },
       powerConsumption: powerConsumption.split(" ")[0],
       timing: {
