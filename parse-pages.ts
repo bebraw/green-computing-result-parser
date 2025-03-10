@@ -39,6 +39,11 @@ async function parse(path: string) {
     "pages.CoachPerformanceScore",
   ];
 
+  Deno.env.get("DEBUG") &&
+    console.log(
+      `Parsed ${allRuns.filter((r) => get(r, "index.country")).length} entries`
+    );
+
   const csv =
     fields.join(",") +
     "\n" +
