@@ -42,7 +42,10 @@ async function parse(path: string) {
   const csv =
     fields.join(",") +
     "\n" +
-    allRuns.map((r) => fields.map((f) => get(r, f)).join(",") + "\n").join("");
+    allRuns
+      .filter((r) => get(r, "index.country"))
+      .map((r) => fields.map((f) => get(r, f)).join(",") + "\n")
+      .join("");
 
   console.log(csv);
 }
