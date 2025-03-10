@@ -128,7 +128,13 @@ async function parseIndex(path: string) {
     return;
   }
 
-  const files2 = await readFiles(files1[0]);
+  // It's possible there are dotfiles (i.e., .DS_Store) within the structure
+  // so those have to be filtered out to avoid breaking parsing conventions
+  const files2 = (
+    await readFiles(
+      files1.filter((f) => !f.split("/").at(-1)?.startsWith("."))[0]
+    )
+  ).filter((f) => !f.split("/").at(-1)?.startsWith("."));
 
   if (!files2.length) {
     return;
