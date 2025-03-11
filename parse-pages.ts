@@ -3,13 +3,20 @@ import * as cheerio from "https://esm.sh/cheerio@1.0.0";
 
 async function parse(path: string) {
   const results = await readTests(path);
-
-  const allRuns: Record<string, unknown>[] = [];
+  let allRuns: Record<string, unknown>[] = [];
 
   results.forEach((result) => {
     result.rounds.forEach((round) => {
       round.runs.forEach((run) => {
-        allRuns.push({ site: result.site, ...run });
+        if (run.results) {
+          allRuns = allRuns.concat(
+            run.results.map((r) => ({
+              path: result.path,
+              site: result.site,
+              ...r,
+            }))
+          );
+        }
       });
     });
   });
@@ -17,18 +24,18 @@ async function parse(path: string) {
   const fields = [
     "path",
     "site",
-    "index.country",
-    "index.category",
-    "index.type.caching",
-    "index.type.scrolling",
-    "index.type.cookies",
-    "index.powerConsumption",
-    "index.timing.ttfb",
-    "index.timing.firstPaint",
-    "index.googleWebVitals.gwvFullyLoaded",
-    "index.googleWebVitals.ttfb",
-    "index.googleWebVitals.fcp",
-    "index.googleWebVitals.lcp",
+    "country",
+    "category",
+    "type.caching",
+    "type.scrolling",
+    "type.cookies",
+    "powerConsumption",
+    "timing.ttfb",
+    "timing.firstPaint",
+    "googleWebVitals.gwvFullyLoaded",
+    "googleWebVitals.ttfb",
+    "googleWebVitals.fcp",
+    "googleWebVitals.lcp",
     "pages.TotalTransferSize",
     "pages.TotalRequests",
     "pages.CPUbenchmarkscore",
@@ -47,10 +54,7 @@ async function parse(path: string) {
   const csv =
     fields.join(",") +
     "\n" +
-    allRuns
-      .filter((r) => get(r, "index.country"))
-      .map((r) => fields.map((f) => get(r, f)).join(",") + "\n")
-      .join("");
+    allRuns.map((r) => fields.map((f) => get(r, f)).join(",") + "\n").join("");
 
   console.log(csv);
 }
@@ -81,7 +85,7 @@ async function readTests(path: string) {
 
   for await (const p of files) {
     ret.push({
-      site: p.split("/").at(-1),
+      site: p.split("/").at(-1)?.split("_").slice(1).join("_"),
       path: p,
       rounds: await readRounds(p),
     });
@@ -115,8 +119,7 @@ async function readRuns(path: string) {
   return Promise.all(
     files.map(async (p) => ({
       path: p,
-      index: await parseIndex(p),
-      pages: await parsePages(p),
+      results: await parseIndex(p),
     }))
   );
 }
@@ -140,7 +143,10 @@ async function parseIndex(path: string) {
     return;
   }
 
-  const f = files2[0];
+  return Promise.all(files2.map((f, i) => parseRun(path, f, i)));
+}
+
+async function parseRun(path: string, f: string, i: number) {
   let [_, suffix] = f.split("--");
 
   if (!suffix) {
@@ -215,6 +221,7 @@ async function parseIndex(path: string) {
         fcp: gwvFcp.split(" ")[0],
         lcp: gwvLcp.split(" ")[0],
       },
+      pages: await parsePages(path, i),
     };
   } catch (error: unknown) {
     if (
@@ -230,9 +237,10 @@ async function parseIndex(path: string) {
   }
 }
 
-async function parsePages(path: string) {
+async function parsePages(path: string, n: number) {
   try {
     const page = await Deno.readTextFile(_path.join(path, "pages.html"));
+
     const $ = cheerio.load(page);
 
     const fields = [
@@ -250,7 +258,7 @@ async function parsePages(path: string) {
     return Object.fromEntries(
       fields.map((field) => [
         field.replace(/ /g, ""),
-        $(`td[data-title="${field}"]`).first().text(),
+        $(`td[data-title="${field}"]`).eq(n).text(),
       ])
     );
   } catch (error: unknown) {
