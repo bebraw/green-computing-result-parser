@@ -204,7 +204,7 @@ async function parseRun(path: string, f: string, i: number) {
       .text();
 
     return {
-      path,
+      path: f,
       country,
       category,
       type: {
