@@ -181,8 +181,8 @@ async function parseRun(path: string, f: string, i: number) {
     S: "scrolled",
     r: "cookies-rejected",
     A: "cookies-accepted",
-    c: "non-cached",
-    F: "cached",
+    F: "fresh",
+    c: "cached",
   };
 
   try {
