@@ -10,10 +10,12 @@ async function parse(path: string) {
       round.runs.forEach((run) => {
         if (run.results) {
           allRuns = allRuns.concat(
-            run.results.map((r) => ({
-              site: result.site,
-              ...r,
-            }))
+            run.results
+              .filter((r) => r?.path)
+              .map((r) => ({
+                site: result.site,
+                ...r,
+              }))
           );
         }
       });
