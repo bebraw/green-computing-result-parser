@@ -52,6 +52,15 @@ async function parse(path: string) {
       `Parsed ${allRuns.filter((r) => get(r, "index.country")).length} entries`
     );
 
+  allRuns.forEach((r) => {
+    const totalTransferSize = get(r, "pages.TotalTransferSize");
+
+    if (totalTransferSize === "0" || !totalTransferSize) {
+      console.error(r);
+      throw new Error("Missing total transfer size!");
+    }
+  });
+
   const csv =
     fields.join(",") +
     "\n" +
