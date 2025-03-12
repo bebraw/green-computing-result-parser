@@ -223,7 +223,7 @@ async function parseRun(path: string, f: string, i: number) {
         fcp: gwvFcp.split(" ")[0],
         lcp: gwvLcp.split(" ")[0],
       },
-      pages: await parsePages(path, i),
+      pages: await parsePages(path, f),
     };
   } catch (error: unknown) {
     if (
@@ -239,7 +239,7 @@ async function parseRun(path: string, f: string, i: number) {
   }
 }
 
-async function parsePages(path: string, n: number) {
+async function parsePages(path: string, f: string) {
   try {
     const page = await Deno.readTextFile(_path.join(path, "pages.html"));
 
@@ -257,10 +257,14 @@ async function parsePages(path: string, n: number) {
       "Coach Performance Score",
     ];
 
+    // Scope to a matching row based on path
+    const p = "pages" + f.split("pages")[1] + "/index.html";
+    const tr = $(`a[href="${p}"]`).parents("tr");
+
     return Object.fromEntries(
       fields.map((field) => [
         field.replace(/ /g, ""),
-        $(`td[data-title="${field}"]`).eq(n).text(),
+        tr.find(`td[data-title="${field}"]`).text(),
       ])
     );
   } catch (error: unknown) {
