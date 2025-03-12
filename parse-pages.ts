@@ -54,10 +54,14 @@ async function parse(path: string) {
 
   allRuns.forEach((r) => {
     const totalTransferSize = get(r, "pages.TotalTransferSize");
+    const totalRequests = get(r, "pages.TotalRequests");
 
-    if (totalTransferSize === "0" || !totalTransferSize) {
+    if (
+      (totalTransferSize === "0" || !totalTransferSize) &&
+      (totalRequests === "0" || !totalRequests)
+    ) {
       console.error(r);
-      throw new Error("Missing total transfer size!");
+      throw new Error("Missing total transfer and total request sizes!");
     }
   });
 
