@@ -11,7 +11,6 @@ async function parse(path: string) {
         if (run.results) {
           allRuns = allRuns.concat(
             run.results.map((r) => ({
-              path: result.path,
               site: result.site,
               ...r,
             }))
@@ -203,6 +202,7 @@ async function parseRun(path: string, f: string, i: number) {
       .text();
 
     return {
+      path,
       country,
       category,
       type: {
