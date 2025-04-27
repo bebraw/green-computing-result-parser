@@ -51,8 +51,12 @@ echo "Scripts saved.\n";
 
 foreach($scripts as $k => $v) {
 	$f = 'scripts/measure' . str_pad(($k + 1), 3, '0', STR_PAD_LEFT) . '.sh';
-	file_put_contents($f, $v);
-	chmod($f, 0755);
+
+	// Pick Germany
+	if (!(($k + 1) % 5)) {
+		file_put_contents($f, $v);
+		chmod($f, 0755);
+	}
 }
 
 function createScripts($round, &$sites, $order, &$scripts, &$check) {
