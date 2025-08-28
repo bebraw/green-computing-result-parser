@@ -1,5 +1,7 @@
-results.csv
-results.tar.bz
-results.tar.gz
-results.zip
+results*.csv
+results*.bz
+results*.tbz
+results*.gz
+results*.zip
+results-*
 failed.txt
